@@ -2,6 +2,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { User } from "./types";
 
 const wss = new WebSocketServer({ port: 8080 });
+console.log("WebSocket server is running on ws://localhost:8080");
 
 let sockets: User[] = [];
 

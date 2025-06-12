@@ -4,7 +4,8 @@ import type { Messages, UserState } from "./Types";
 
 function App() {
   const inputRef = useRef<HTMLInputElement>(null);
-  const wsRef = useRef<WebSocket>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   const [messages, setMessages] = useState<Messages>({
     sentMessages: ["Hi There!!"],
@@ -19,11 +20,31 @@ function App() {
 
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:8080");
+
     ws.onmessage = (event) => {
-      setMessages((prev) => ({
-        ...prev,
-        receivedMessages: [...prev.receivedMessages, event.data],
-      }));
+      console.log("Message received:", event.data);
+      if (event.data.count) {
+        setData((prev) => ({
+          ...prev,
+          users: Number(event.data?.count),
+        }));
+      } else {
+        if (event.data.payload && event.data.payload.name !== data.name) {
+          setMessages((prev) => ({
+            ...prev,
+            receivedMessages: [...prev.receivedMessages, event.data],
+          }));
+        } else {
+          setMessages((prev) => ({
+            ...prev,
+            sentMessages: [...prev.sentMessages, event.data],
+          }));
+        }
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket Error:", error);
     };
 
     wsRef.current = ws;
@@ -31,7 +52,7 @@ function App() {
     return () => {
       ws.close();
     };
-  }, []);
+  }, [data.name]);
 
   const handleSend = useCallback(() => {
     const message = inputRef.current?.value?.trim();
@@ -42,22 +63,43 @@ function App() {
       sentMessages: [...prev.sentMessages, message],
     }));
 
-    wsRef.current?.send(message);
+    wsRef.current?.send(
+      JSON.stringify({
+        type: "chat",
+        payload: {
+          roomId: inputRef.current?.value?.trim(),
+          sender: nameRef.current?.value?.trim(),
+          message: message,
+        },
+      })
+    );
 
     if (inputRef.current) inputRef.current.value = "";
   }, []);
 
-  const handleCreateRoom = useCallback(async () => {
+  const handleCreateRoom = useCallback(() => {
     const code = inputRef.current?.value?.trim();
-    if (!code) return;
+    const name = nameRef.current?.value?.trim();
+    if (!code || !name) return;
 
-    if (wsRef.current) {
-      wsRef.current.onopen = () => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(
+        JSON.stringify({
+          type: "join",
+          payload: {
+            roomId: code,
+            name: name,
+          },
+        })
+      );
+    } else {
+      wsRef.current!.onopen = () => {
         wsRef.current?.send(
           JSON.stringify({
             type: "join",
             payload: {
               roomId: code,
+              name: name,
             },
           })
         );
@@ -68,9 +110,11 @@ function App() {
       ...prev,
       users: prev.users + 1,
       code: code,
+      name: name,
     }));
 
     if (inputRef.current) inputRef.current.value = "";
+    if (nameRef.current) nameRef.current.value = "";
   }, []);
 
   return (
@@ -133,15 +177,23 @@ function App() {
 
         <div className="w-full flex justify-center items-center flex-row text-white">
           <div className="flex flex-row w-10/12 mb-10">
-            <div className="flex flex-row">
+            <div className="flex flex-row w-full">
               <input
                 ref={inputRef}
                 placeholder={
                   data.code !== "" ? "Enter your message" : "Enter Room No."
                 }
-                className="h-16 w-5/6 border-2 rounded-lg m-2 p-4 text-xl font-bold text-gray-100 bg-gray-800"
+                className={`h-16 ${
+                  data.code == "" ? "w-1/2" : "w-full"
+                } border-2 rounded-lg m-2 p-4 text-xl font-bold text-gray-100 bg-gray-800`}
               />
-              {/* <input ref={} className="" /> */}
+              {data.code == "" && (
+                <input
+                  ref={nameRef}
+                  placeholder="Enter your name"
+                  className="h-16 w-1/2 border-2 rounded-lg m-2 p-4 text-xl font-bold text-gray-100 bg-gray-800"
+                />
+              )}
             </div>
             <button
               onClick={data.code !== "" ? handleSend : handleCreateRoom}

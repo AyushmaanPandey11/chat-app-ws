@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 import type { Messages, UserState } from "./Types";
+import { ReceivedMessageBox, SendMessageBox } from "./components/User";
 
 function App() {
   const inputRef = useRef<HTMLInputElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
   const [messages, setMessages] = useState<Messages>({
@@ -17,6 +19,10 @@ function App() {
     users: 0,
     code: "",
   });
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:8080");
@@ -143,25 +149,24 @@ function App() {
           </div>
         </div>
 
-        <div className="mx-auto flex h-9/12 w-full text-white p-4 m-2">
+        <div className="mx-auto flex h-9/12 w-full text-white p-4 m-2 overflow-y-visible">
           {data.code !== "" ? (
             <div className="flex flex-col justify-start mx-auto border-2 border-white rounded-xl p-4 m-2 w-10/12 items-start space-y-4 overflow-y-auto">
-              {messages.sentMessages.map((msg, idx) => (
-                <div
-                  key={`sent-${idx}`}
-                  className="bg-amber-50 text-gray-800 rounded-lg text-lg font-bold p-2 max-w-9/12 self-end"
-                >
-                  {msg}
-                </div>
-              ))}
-              {messages.receivedMessages.map((msg, idx) => (
-                <div
-                  key={`recv-${idx}`}
-                  className="text-amber-100 border-2 border-white p-2 rounded-lg font-bold text-lg max-w-9/12 self-start"
-                >
-                  {msg}
-                </div>
-              ))}
+              {[...messages.sentMessages, ...messages.receivedMessages].map(
+                (msg, idx) => {
+                  const isSent = messages.sentMessages.includes(msg);
+                  return isSent ? (
+                    <SendMessageBox key={`sent-${idx}`} msg={msg} idx={idx} />
+                  ) : (
+                    <ReceivedMessageBox
+                      key={`recv-${idx}`}
+                      msg={msg}
+                      idx={idx}
+                    />
+                  );
+                }
+              )}
+              <div ref={bottomRef} />
             </div>
           ) : (
             <div className="flex justify-center items-center w-full h-full mt-5">

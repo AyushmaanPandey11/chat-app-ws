@@ -16,7 +16,7 @@ wss.on("connection", (socket) => {
       console.log("Received message:", parsedMessage);
     } catch (error) {
       console.error("Failed to parse message", error);
-      socket.close(); // Close connection if invalid message
+      socket.close();
       return;
     }
 
@@ -67,13 +67,28 @@ wss.on("connection", (socket) => {
 
       if (userRoom) {
         const messagetoSend = {
-          sender: parsedMessage.payload.name,
+          sender: parsedMessage.payload.sender,
           message: parsedMessage.payload.message,
         };
         userRoom.socket.send(JSON.stringify(messagetoSend));
         console.log(
-          `${parsedMessage.payload.name} sent a message: ${parsedMessage.payload.message}`
+          `${parsedMessage.payload.sender} sent a message: ${parsedMessage.payload.message}`
         );
+
+        sockets
+          .filter(
+            (x) =>
+              x.roomId === parsedMessage.payload.roomId &&
+              x.name !== parsedMessage.payload.sender
+          )
+          .forEach((s) =>
+            s.socket.send(
+              JSON.stringify({
+                message: parsedMessage.payload.message,
+                sender: parsedMessage.payload.sender,
+              })
+            )
+          );
       }
     }
   });

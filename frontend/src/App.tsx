@@ -8,6 +8,8 @@ function App() {
   const nameRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const [roomNo, setRoomNo] = useState("");
+  const [name, setName] = useState("");
 
   const [messages, setMessages] = useState<Messages>({
     sentMessages: ["Hi There!!"],
@@ -58,7 +60,7 @@ function App() {
     return () => {
       ws.close();
     };
-  }, [data.name]);
+  }, []);
 
   const handleSend = useCallback(() => {
     const message = inputRef.current?.value?.trim();
@@ -69,23 +71,24 @@ function App() {
       sentMessages: [...prev.sentMessages, message],
     }));
 
-    wsRef.current?.send(
-      JSON.stringify({
-        type: "chat",
-        payload: {
-          roomId: inputRef.current?.value?.trim(),
-          sender: nameRef.current?.value?.trim(),
-          message: message,
-        },
-      })
-    );
+    const messageBody = {
+      type: "chat",
+      payload: {
+        roomId: roomNo,
+        sender: name,
+        message: message,
+      },
+    };
+    wsRef.current?.send(JSON.stringify(messageBody));
 
     if (inputRef.current) inputRef.current.value = "";
-  }, []);
+  }, [name, roomNo]);
 
   const handleCreateRoom = useCallback(() => {
-    const code = inputRef.current?.value?.trim();
-    const name = nameRef.current?.value?.trim();
+    const code = inputRef.current?.value?.trim() as string;
+    const name = nameRef.current?.value?.trim() as string;
+    setRoomNo(code);
+    setName(name);
     if (!code || !name) return;
 
     if (wsRef.current?.readyState === WebSocket.OPEN) {

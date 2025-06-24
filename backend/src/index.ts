@@ -84,8 +84,12 @@ wss.on("connection", (socket) => {
           .forEach((s) =>
             s.socket.send(
               JSON.stringify({
-                message: parsedMessage.payload.message,
-                sender: parsedMessage.payload.sender,
+                type: "chat",
+                payload: {
+                  roomId: parsedMessage.payload.roomId,
+                  message: parsedMessage.payload.message,
+                  sender: parsedMessage.payload.sender,
+                },
               })
             )
           );

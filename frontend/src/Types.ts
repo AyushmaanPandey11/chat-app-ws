@@ -4,7 +4,11 @@ export type UserState = {
   code: string;
 };
 
+export type MessageBody = {
+  username: string;
+  msg: string;
+};
 export type Messages = {
   sentMessages: string[];
-  receivedMessages: string[];
+  receivedMessages: MessageBody[];
 };

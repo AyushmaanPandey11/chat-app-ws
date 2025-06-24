@@ -1,24 +1,31 @@
 import React from "react";
 
+type ReceivedMessageProp = {
+  msg: string;
+  name: string;
+};
+
 type SendMessageProp = {
   msg: string;
-  idx: number;
 };
-export const SendMessageBox = React.memo(({ msg, idx }: SendMessageProp) => {
+
+export const SendMessageBox = React.memo(({ msg }: SendMessageProp) => {
   return (
-    <div key={`sent-${idx}`} className="flex justify-end w-full">
-      <div className="text-black text-right bg-white rounded-lg p-2 m-2 text-lg max-w-[75%]">
+    <div className="flex justify-end w-full flex-col items-end">
+      <div className="text-black bg-white rounded-lg p-2 m-2 my-0 text-md max-w-[90%] self-end">
         {msg}
       </div>
     </div>
   );
 });
 
+// ReceivedMessageBox: Aligns message to the left
 export const ReceivedMessageBox = React.memo(
-  ({ msg, idx }: SendMessageProp) => {
+  ({ msg, name }: ReceivedMessageProp) => {
     return (
-      <div key={`sent-${idx}`} className="flex justify-start w-full">
-        <div className="text-black text-right bg-white rounded-lg p-2 m-2 text-lg max-w-[75%]">
+      <div className="flex justify-start w-full flex-col items-start">
+        <p className="text-white px-2 text-xs text-left">{name}</p>
+        <div className="text-black bg-white rounded-lg p-2 m-2 my-0 text-md max-w-[90%] self-start">
           {msg}
         </div>
       </div>

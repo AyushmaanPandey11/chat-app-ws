@@ -8,12 +8,10 @@ function App() {
   const nameRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const [roomNo, setRoomNo] = useState("");
-  const [name, setName] = useState("");
 
   const [messages, setMessages] = useState<Messages>({
     sentMessages: ["Hi There!!"],
-    receivedMessages: ["Yo!!!"],
+    receivedMessages: [{ username: "Other", msg: "Yo!!!" }],
   });
 
   const [data, setData] = useState<UserState>({
@@ -24,35 +22,55 @@ function App() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    console.log(messages.receivedMessages);
   }, [messages]);
 
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:8080");
 
     ws.onmessage = (event) => {
-      console.log("Message received:", event.data);
-      if (event.data.count) {
+      let parsedData;
+      try {
+        parsedData = JSON.parse(event.data);
+        console.log("Message received:", parsedData);
+      } catch (error) {
+        console.error("Failed to parse WebSocket message:", error);
+        return;
+      }
+
+      if (parsedData.type === "join") {
         setData((prev) => ({
           ...prev,
-          users: Number(event.data?.count),
+          users: Number(parsedData.count) || prev.users,
         }));
-      } else {
-        if (event.data.payload && event.data.payload.name !== data.name) {
-          setMessages((prev) => ({
-            ...prev,
-            receivedMessages: [...prev.receivedMessages, event.data],
-          }));
-        } else {
-          setMessages((prev) => ({
-            ...prev,
-            sentMessages: [...prev.sentMessages, event.data],
-          }));
-        }
+      } else if (parsedData.type === "chat") {
+        const isOwnMessage = parsedData.sender === data.name;
+        setMessages((prev) => ({
+          ...prev,
+          [isOwnMessage ? "sentMessages" : "receivedMessages"]: [
+            ...prev[isOwnMessage ? "sentMessages" : "receivedMessages"],
+            isOwnMessage
+              ? parsedData.message
+              : {
+                  username: parsedData.payload.sender,
+                  msg: parsedData.payload.message,
+                },
+          ],
+        }));
+      } else if (parsedData.type === "error") {
+        console.error("Server error:", parsedData.message);
       }
     };
 
     ws.onerror = (error) => {
       console.error("WebSocket Error:", error);
+    };
+
+    ws.onclose = (event) => {
+      console.log("WebSocket closed:", {
+        code: event.code,
+        reason: event.reason,
+      });
     };
 
     wsRef.current = ws;
@@ -64,7 +82,14 @@ function App() {
 
   const handleSend = useCallback(() => {
     const message = inputRef.current?.value?.trim();
-    if (!message) return;
+    if (!message || !data.code || !data.name) {
+      console.warn("Cannot send message: missing message, code, or name", {
+        message,
+        code: data.code,
+        name: data.name,
+      });
+      return;
+    }
 
     setMessages((prev) => ({
       ...prev,
@@ -74,52 +99,46 @@ function App() {
     const messageBody = {
       type: "chat",
       payload: {
-        roomId: roomNo,
-        sender: name,
-        message: message,
+        roomId: data.code,
+        sender: data.name,
+        message,
       },
     };
+    console.log("Sending message:", messageBody);
     wsRef.current?.send(JSON.stringify(messageBody));
 
     if (inputRef.current) inputRef.current.value = "";
-  }, [name, roomNo]);
+  }, [data.name, data.code]);
 
   const handleCreateRoom = useCallback(() => {
-    const code = inputRef.current?.value?.trim() as string;
-    const name = nameRef.current?.value?.trim() as string;
-    setRoomNo(code);
-    setName(name);
-    if (!code || !name) return;
+    const code = inputRef.current?.value?.trim();
+    const name = nameRef.current?.value?.trim();
+    if (!code || !name) {
+      console.warn("Cannot join room: missing code or name", { code, name });
+      return;
+    }
+
+    const payload = {
+      type: "join",
+      payload: {
+        roomId: code,
+        name,
+      },
+    };
+    console.log("Sending join message:", payload);
 
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(
-        JSON.stringify({
-          type: "join",
-          payload: {
-            roomId: code,
-            name: name,
-          },
-        })
-      );
+      wsRef.current.send(JSON.stringify(payload));
     } else {
       wsRef.current!.onopen = () => {
-        wsRef.current?.send(
-          JSON.stringify({
-            type: "join",
-            payload: {
-              roomId: code,
-              name: name,
-            },
-          })
-        );
+        wsRef.current?.send(JSON.stringify(payload));
       };
     }
 
     setData((prev) => ({
       ...prev,
-      users: prev.users + 1,
-      code: code,
-      name: name,
+      code,
+      name,
     }));
 
     if (inputRef.current) inputRef.current.value = "";
@@ -154,21 +173,17 @@ function App() {
 
         <div className="mx-auto flex h-9/12 w-full text-white p-4 m-2 overflow-y-visible">
           {data.code !== "" ? (
-            <div className="flex flex-col justify-start mx-auto border-2 border-white rounded-xl p-4 m-2 w-10/12 items-start space-y-4 overflow-y-auto">
-              {[...messages.sentMessages, ...messages.receivedMessages].map(
-                (msg, idx) => {
-                  const isSent = messages.sentMessages.includes(msg);
-                  return isSent ? (
-                    <SendMessageBox key={`sent-${idx}`} msg={msg} idx={idx} />
-                  ) : (
-                    <ReceivedMessageBox
-                      key={`recv-${idx}`}
-                      msg={msg}
-                      idx={idx}
-                    />
-                  );
-                }
-              )}
+            <div className="flex flex-col justify-start mx-auto border-2 border-white rounded-xl p-4 pb-0 m-2 w-10/12 items-start space-y-2 overflow-y-auto">
+              {messages.sentMessages.map((msg, idx) => (
+                <SendMessageBox key={`sent-${idx}`} msg={msg} />
+              ))}
+              {messages.receivedMessages.map((msg, idx) => (
+                <ReceivedMessageBox
+                  key={`recv-${idx}`}
+                  msg={msg.msg}
+                  name={msg.username}
+                />
+              ))}
               <div ref={bottomRef} />
             </div>
           ) : (

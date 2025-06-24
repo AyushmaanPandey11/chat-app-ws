@@ -32,3 +32,13 @@ export const ReceivedMessageBox = React.memo(
     );
   }
 );
+
+export const NotificationBox = React.memo(({ msg }: { msg: string }) => {
+  return (
+    <div className="flex  justify-center w-full">
+      <p className="text-center rounded-sm px-2 text-md text-black bg-blue-300">
+        {msg}
+      </p>
+    </div>
+  );
+});

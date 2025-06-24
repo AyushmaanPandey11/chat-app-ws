@@ -35,32 +35,23 @@ wss.on("connection", (socket) => {
       const count = sockets.filter(
         (x) => x.roomId === parsedMessage.payload.roomId
       ).length;
-      socket.send(
-        JSON.stringify({
-          type: "join",
-          message: "Welcome to the room!",
-          count: count,
-        })
-      );
 
       sockets
-        .filter(
-          (x) =>
-            x.roomId === parsedMessage.payload.roomId &&
-            x.name !== parsedMessage.payload.name
-        )
+        .filter((x) => x.roomId === parsedMessage.payload.roomId)
         .forEach((s) =>
           s.socket.send(
             JSON.stringify({
-              message: "New user joined",
+              type: "join",
+              message: `${parsedMessage.payload.name} joined the room!`,
               count: count,
+              newUser: parsedMessage.payload.name,
             })
           )
         );
     }
 
     // Handle chat messages
-    if (parsedMessage.type === "chat") {
+    else if (parsedMessage.type === "chat") {
       const userRoom = sockets.find(
         (s) => s.roomId === parsedMessage.payload.roomId
       );
@@ -70,7 +61,6 @@ wss.on("connection", (socket) => {
           sender: parsedMessage.payload.sender,
           message: parsedMessage.payload.message,
         };
-        userRoom.socket.send(JSON.stringify(messagetoSend));
         console.log(
           `${parsedMessage.payload.sender} sent a message: ${parsedMessage.payload.message}`
         );
@@ -85,11 +75,7 @@ wss.on("connection", (socket) => {
             s.socket.send(
               JSON.stringify({
                 type: "chat",
-                payload: {
-                  roomId: parsedMessage.payload.roomId,
-                  message: parsedMessage.payload.message,
-                  sender: parsedMessage.payload.sender,
-                },
+                payload: messagetoSend,
               })
             )
           );
@@ -101,7 +87,21 @@ wss.on("connection", (socket) => {
   socket.on("close", () => {
     const disconnectedUser = sockets.find((s) => s.socket === socket);
     if (disconnectedUser) {
-      sockets = sockets.filter((s) => s.socket !== socket); // Remove user from array
+      const otherUsers = sockets.filter(
+        (s) => s.roomId === disconnectedUser.roomId && s.socket !== socket
+      );
+      otherUsers.forEach((s) =>
+        s.socket.send(
+          JSON.stringify({
+            type: "left",
+            payload: {
+              message: `${disconnectedUser.name} has left the room`,
+              count: otherUsers.length,
+            },
+          })
+        )
+      );
+      sockets = sockets.filter((s) => s.socket !== socket);
       console.log(
         `${disconnectedUser.name} disconnected from room ${disconnectedUser.roomId}`
       );

@@ -5,10 +5,10 @@ export type UserState = {
 };
 
 export type MessageBody = {
-  username: string;
+  type: "sent" | "received";
+  username?: string;
   msg: string;
 };
 export type Messages = {
-  sentMessages: string[];
-  receivedMessages: MessageBody[];
+  messages: MessageBody[];
 };

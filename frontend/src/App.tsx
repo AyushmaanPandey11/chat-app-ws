@@ -1,18 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 import type { Messages, UserState } from "./Types";
-import { ReceivedMessageBox, SendMessageBox } from "./components/User";
+import {
+  NotificationBox,
+  ReceivedMessageBox,
+  SendMessageBox,
+} from "./components/User";
 
 function App() {
   const inputRef = useRef<HTMLInputElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const currentUserRef = useRef<string>("");
 
-  const [messages, setMessages] = useState<Messages>({
-    sentMessages: ["Hi There!!"],
-    receivedMessages: [{ username: "Other", msg: "Yo!!!" }],
-  });
+  const [notification, setNotification] = useState<string>("");
+  const [messages, setMessages] = useState<Messages>({ messages: [] });
 
   const [data, setData] = useState<UserState>({
     name: "",
@@ -22,7 +25,7 @@ function App() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    console.log(messages.receivedMessages);
+    console.log(messages);
   }, [messages]);
 
   useEffect(() => {
@@ -39,22 +42,31 @@ function App() {
       }
 
       if (parsedData.type === "join") {
+        setNotification(
+          parsedData.newUser === currentUserRef.current
+            ? `Welcome ${parsedData.newUser}`
+            : parsedData.message
+        );
         setData((prev) => ({
           ...prev,
           users: Number(parsedData.count) || prev.users,
         }));
+      } else if (parsedData.type === "left") {
+        setNotification(parsedData.payload.message);
+        setData((prev) => ({
+          ...prev,
+          users: Number(parsedData.payload.count) || prev.users,
+        }));
       } else if (parsedData.type === "chat") {
-        const isOwnMessage = parsedData.sender === data.name;
         setMessages((prev) => ({
           ...prev,
-          [isOwnMessage ? "sentMessages" : "receivedMessages"]: [
-            ...prev[isOwnMessage ? "sentMessages" : "receivedMessages"],
-            isOwnMessage
-              ? parsedData.message
-              : {
-                  username: parsedData.payload.sender,
-                  msg: parsedData.payload.message,
-                },
+          messages: [
+            ...prev.messages,
+            {
+              type: "received",
+              msg: parsedData.payload.message,
+              username: parsedData.payload.sender,
+            },
           ],
         }));
       } else if (parsedData.type === "error") {
@@ -93,7 +105,7 @@ function App() {
 
     setMessages((prev) => ({
       ...prev,
-      sentMessages: [...prev.sentMessages, message],
+      messages: [...prev.messages, { type: "sent", msg: message }],
     }));
 
     const messageBody = {
@@ -117,6 +129,12 @@ function App() {
       console.warn("Cannot join room: missing code or name", { code, name });
       return;
     }
+    currentUserRef.current = name;
+    setData((prev) => ({
+      ...prev,
+      code,
+      name,
+    }));
 
     const payload = {
       type: "join",
@@ -125,7 +143,6 @@ function App() {
         name,
       },
     };
-    console.log("Sending join message:", payload);
 
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(payload));
@@ -134,12 +151,6 @@ function App() {
         wsRef.current?.send(JSON.stringify(payload));
       };
     }
-
-    setData((prev) => ({
-      ...prev,
-      code,
-      name,
-    }));
 
     if (inputRef.current) inputRef.current.value = "";
     if (nameRef.current) nameRef.current.value = "";
@@ -174,16 +185,18 @@ function App() {
         <div className="mx-auto flex h-9/12 w-full text-white p-4 m-2 overflow-y-visible">
           {data.code !== "" ? (
             <div className="flex flex-col justify-start mx-auto border-2 border-white rounded-xl p-4 pb-0 m-2 w-10/12 items-start space-y-2 overflow-y-auto">
-              {messages.sentMessages.map((msg, idx) => (
-                <SendMessageBox key={`sent-${idx}`} msg={msg} />
-              ))}
-              {messages.receivedMessages.map((msg, idx) => (
-                <ReceivedMessageBox
-                  key={`recv-${idx}`}
-                  msg={msg.msg}
-                  name={msg.username}
-                />
-              ))}
+              {messages.messages.map((msg, idx) =>
+                msg.type === "sent" ? (
+                  <SendMessageBox key={`sent-${idx}`} msg={msg.msg} />
+                ) : (
+                  <ReceivedMessageBox
+                    key={`recv-${idx}`}
+                    msg={msg.msg}
+                    name={msg.username || "Unknown"}
+                  />
+                )
+              )}
+              <NotificationBox msg={notification} />
               <div ref={bottomRef} />
             </div>
           ) : (

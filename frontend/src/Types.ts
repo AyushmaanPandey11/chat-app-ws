@@ -5,7 +5,7 @@ export type UserState = {
 };
 
 export type MessageBody = {
-  type: "sent" | "received";
+  type: "sent" | "received" | "notification" | "left";
   username?: string;
   msg: string;
 };

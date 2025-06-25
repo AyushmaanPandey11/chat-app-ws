@@ -1,4 +1,4 @@
-import { WebSocketServer, WebSocket } from "ws";
+import { WebSocketServer } from "ws";
 import { User } from "./types";
 
 const wss = new WebSocketServer({ port: 8080 });

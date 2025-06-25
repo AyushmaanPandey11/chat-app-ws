@@ -13,8 +13,6 @@ function App() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const currentUserRef = useRef<string>("");
-
-  const [notification, setNotification] = useState<string>("");
   const [messages, setMessages] = useState<Messages>({ messages: [] });
 
   const [data, setData] = useState<UserState>({
@@ -42,17 +40,35 @@ function App() {
       }
 
       if (parsedData.type === "join") {
-        setNotification(
-          parsedData.newUser === currentUserRef.current
-            ? `Welcome ${parsedData.newUser}`
-            : parsedData.message
-        );
+        setMessages((prev) => ({
+          ...prev,
+          messages: [
+            ...prev.messages,
+            {
+              type: "notification",
+              msg:
+                parsedData.newUser === currentUserRef.current
+                  ? `Welcome ${parsedData.newUser}`
+                  : parsedData.message,
+              username: parsedData.newUser,
+            },
+          ],
+        }));
         setData((prev) => ({
           ...prev,
           users: Number(parsedData.count) || prev.users,
         }));
       } else if (parsedData.type === "left") {
-        setNotification(parsedData.payload.message);
+        setMessages((prev) => ({
+          ...prev,
+          messages: [
+            ...prev.messages,
+            {
+              type: "left",
+              msg: parsedData.payload.message,
+            },
+          ],
+        }));
         setData((prev) => ({
           ...prev,
           users: Number(parsedData.payload.count) || prev.users,
@@ -188,15 +204,17 @@ function App() {
               {messages.messages.map((msg, idx) =>
                 msg.type === "sent" ? (
                   <SendMessageBox key={`sent-${idx}`} msg={msg.msg} />
-                ) : (
+                ) : msg.type === "received" ? (
                   <ReceivedMessageBox
                     key={`recv-${idx}`}
                     msg={msg.msg}
                     name={msg.username || "Unknown"}
                   />
+                ) : (
+                  <NotificationBox msg={msg.msg} key={`notify-${idx}`} />
                 )
               )}
-              <NotificationBox msg={notification} />
+
               <div ref={bottomRef} />
             </div>
           ) : (
@@ -222,12 +240,26 @@ function App() {
                 className={`h-16 ${
                   data.code == "" ? "w-1/2" : "w-full"
                 } border-2 rounded-lg m-2 p-4 text-xl font-bold text-gray-100 bg-gray-800`}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    if (data.code !== "") {
+                      handleSend();
+                    } else {
+                      handleCreateRoom();
+                    }
+                  }
+                }}
               />
               {data.code == "" && (
                 <input
                   ref={nameRef}
                   placeholder="Enter your name"
                   className="h-16 w-1/2 border-2 rounded-lg m-2 p-4 text-xl font-bold text-gray-100 bg-gray-800"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleCreateRoom();
+                    }
+                  }}
                 />
               )}
             </div>

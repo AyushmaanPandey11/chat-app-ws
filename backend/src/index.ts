@@ -5,7 +5,7 @@ dotenv.config({
   path: "./.env",
 });
 
-const port = Number(process.env.PORT);
+const port = Number(process.env.PORT || 8080);
 const wss = new WebSocketServer({ port });
 
 console.log(`WebSocket server is running on port ${port}`);

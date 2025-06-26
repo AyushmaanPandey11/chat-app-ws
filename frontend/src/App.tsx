@@ -186,7 +186,9 @@ function App() {
                 Real Time Chat
               </span>
               <span className="font-bold text-left sm:text-[1.5vw] text-[2vw] lg:text-xs text-white">
-                Unsaved Chat between users using WebSockets
+                {data.code !== ""
+                  ? "Tell Your Friends to join the room!!"
+                  : "Unsaved Chat between users using WebSockets"}
               </span>
             </div>
             {data.code !== "" && (

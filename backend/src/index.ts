@@ -90,17 +90,24 @@ wss.on("connection", (socket) => {
       const otherUsers = sockets.filter(
         (s) => s.roomId === disconnectedUser.roomId && s.socket !== socket
       );
-      otherUsers.forEach((s) =>
-        s.socket.send(
-          JSON.stringify({
-            type: "left",
-            payload: {
-              message: `${disconnectedUser.name} has left the room`,
-              count: otherUsers.length,
-            },
-          })
-        )
-      );
+
+      if (otherUsers.length > 0) {
+        otherUsers.forEach((s) =>
+          s.socket.send(
+            JSON.stringify({
+              type: "left",
+              payload: {
+                message: `${disconnectedUser.name} has left the room`,
+                count: otherUsers.length,
+              },
+            })
+          )
+        );
+      } else {
+        sockets = sockets.filter((s) => s.roomId !== disconnectedUser.roomId);
+        console.log(`sockets with id ${disconnectedUser.roomId} are cleared`);
+      }
+
       sockets = sockets.filter((s) => s.socket !== socket);
       console.log(
         `${disconnectedUser.name} disconnected from room ${disconnectedUser.roomId}`

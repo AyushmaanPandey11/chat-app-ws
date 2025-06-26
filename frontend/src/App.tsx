@@ -220,7 +220,7 @@ function App() {
           ) : (
             <div className="flex justify-center items-center w-full h-full mt-0 sm:mt-0 lg:mt-4">
               <div
-                className="bg-gray-200 text-black hover:cursor-pointer w-10/12 flex justify-center items-center rounded-xl sm:text-[3.3vw] text-lg lg:text-xl 2xl:text-2xl font-bold sm:p-3 p-3 lg:p-3 2xl:p-6"
+                className="bg-gray-200 text-black hover:cursor-pointer w-10/12 flex justify-center items-center rounded-xl sm:text-[3.3vw] text-xl lg:text-xl 2xl:text-2xl font-bold sm:p-3 p-3 lg:p-3 2xl:p-6"
                 onClick={handleCreateRoom}
               >
                 Create New Room

@@ -175,7 +175,7 @@ function App() {
   return (
     <div className="h-screen bg-black flex justify-center items-center">
       <div
-        className={`flex flex-col justify-center items-center mx-auto border-white border-2 rounded-2xl xl:w-1/3 lg:w-2/5 ${
+        className={`flex flex-col justify-center items-center mx-auto border-white border-2 rounded-2xl w-3/4 sm:w-1/3 xl:w-1/3 lg:w-2/5 ${
           data.code !== "" ? "h-5/6" : "h-3/5 sm:h-3/5 lg:h-1/3"
         }`}
       >
@@ -240,10 +240,8 @@ function App() {
                   data.code !== "" ? "Enter your message" : "Enter Room No."
                 }
                 className={` ${
-                  data.code == ""
-                    ? "h-8 w-10/12 sm:h-8 sm:w-10/12 "
-                    : "w-10/12 h-8 lg:w-full"
-                } border-2 rounded-lg lg:m-2 lg:p-4 lg:px-0.5 lg:my-0 m-4 my-1 p-1 text-xs sm:m-4 sm:my-1 sm:p-1 sm:text-xs lg:text-xs font-bold text-gray-100 bg-gray-800`}
+                  data.code == "" ? "h-8 sm:h-8 sm:w-10/12 " : "h-8 lg:w-full"
+                } border-2 w-[59vw] rounded-lg lg:m-2 lg:p-4 lg:px-0.5 lg:my-0 m-4 my-1 p-1 text-xs sm:m-4 sm:my-1 sm:p-1 sm:text-xs lg:text-xs font-bold text-gray-100 bg-gray-800`}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     if (data.code !== "") {
@@ -258,7 +256,7 @@ function App() {
                 <input
                   ref={nameRef}
                   placeholder="Enter Your Name"
-                  className="w-10/12 sm:w-10/12 h-8 sm:h-8 lg:h-8 m-4 sm:m-4 my-1 sm:my-1 border-2 rounded-lg lg:m-2 lg:p-4 lg:px-0.5 p-1 sm:p-1 lg:my-0 text-xs sm:text-xs lg:text-xs font-bold text-gray-100 bg-gray-800"
+                  className="w-[59vw] sm:w-10/12 h-8 sm:h-8 lg:h-8 m-4 sm:m-4 my-1 sm:my-1 border-2 rounded-lg lg:m-2 lg:p-4 lg:px-0.5 p-1 sm:p-1 lg:my-0 text-xs sm:text-xs lg:text-xs font-bold text-gray-100 bg-gray-800"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       handleCreateRoom();
@@ -269,7 +267,7 @@ function App() {
             </div>
             <button
               onClick={data.code !== "" ? handleSend : handleCreateRoom}
-              className="cursor-pointer m-4 sm:m-4 h-8 sm:h-8 lg:h-9 w-10/12 sm:w-10/12 lg:w-1/6 border-2 lg:my-0 rounded-lg lg:m-2 p-1 sm:p-1 lg:p-3 lg:py-0 text-black font-bold bg-white text-sm sm:text-sm lg:text-md"
+              className="cursor-pointer m-4 sm:m-4 h-8 sm:h-8 lg:h-9 w-[59vw] sm:w-10/12 lg:w-1/6 border-2 lg:my-0 rounded-lg lg:m-2 p-1 sm:p-1 lg:p-3 lg:py-0 text-black font-bold bg-white text-sm sm:text-sm lg:text-md"
             >
               {data.code !== "" ? "Send" : "Join"}
             </button>

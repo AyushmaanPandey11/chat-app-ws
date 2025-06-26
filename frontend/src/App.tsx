@@ -27,7 +27,7 @@ function App() {
   }, [messages]);
 
   useEffect(() => {
-    const ws = new WebSocket(String(process.env.REACT_APP_WS_URL));
+    const ws = new WebSocket("wss://chat-app-ws-owra.onrender.com");
 
     ws.onmessage = (event) => {
       let parsedData;

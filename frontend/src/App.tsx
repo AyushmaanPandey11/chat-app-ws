@@ -27,7 +27,7 @@ function App() {
   }, [messages]);
 
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:8080");
+    const ws = new WebSocket(process.env.REACT_APP_WS_URL as string);
 
     ws.onmessage = (event) => {
       let parsedData;

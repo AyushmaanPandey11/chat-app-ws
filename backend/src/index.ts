@@ -1,8 +1,14 @@
 import { WebSocketServer } from "ws";
 import { User } from "./types";
+import dotenv from "dotenv";
+dotenv.config({
+  path: "./.env",
+});
 
-const wss = new WebSocketServer({ port: 8080 });
-console.log("WebSocket server is running on ws://localhost:8080");
+const port = Number(process.env.PORT);
+const wss = new WebSocketServer({ port });
+
+console.log(`WebSocket server is running on port ${port}`);
 
 let sockets: User[] = [];
 

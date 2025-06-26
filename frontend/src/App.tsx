@@ -185,7 +185,7 @@ function App() {
               <span className="font-bold text-left sm:text-[3vw] lg:text-xl mb-1 sm:mb-1 lg:mb-0">
                 Real Time Chat
               </span>
-              <span className="font-bold text-left sm:text-[1.5vw] text-[1.5vw] lg:text-xs text-white">
+              <span className="font-bold text-left sm:text-[1.5vw] text-[2vw] lg:text-xs text-white">
                 Unsaved Chat between users using WebSockets
               </span>
             </div>
@@ -220,7 +220,7 @@ function App() {
           ) : (
             <div className="flex justify-center items-center w-full h-full mt-0 sm:mt-0 lg:mt-4">
               <div
-                className="bg-gray-200 text-black hover:cursor-pointer w-10/12 flex justify-center items-center rounded-xl sm:text-[3.3vw] text-[3.3vw] lg:text-xl 2xl:text-2xl font-bold sm:p-3 p-3 lg:p-3 2xl:p-6"
+                className="bg-gray-200 text-black hover:cursor-pointer w-10/12 flex justify-center items-center rounded-xl sm:text-[3.3vw] text-lg lg:text-xl 2xl:text-2xl font-bold sm:p-3 p-3 lg:p-3 2xl:p-6"
                 onClick={handleCreateRoom}
               >
                 Create New Room

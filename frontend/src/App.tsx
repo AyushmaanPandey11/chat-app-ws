@@ -175,22 +175,22 @@ function App() {
   return (
     <div className="h-screen bg-black flex justify-center items-center">
       <div
-        className={`flex flex-col justify-center items-center mx-auto border-white border-2 rounded-2xl w-1/3 ${
-          data.code !== "" ? "h-5/6" : "h-1/3"
+        className={`flex flex-col justify-center items-center mx-auto border-white border-2 rounded-2xl xl:w-1/3 lg:w-2/5 ${
+          data.code !== "" ? "h-5/6" : "sm:h-3/5 lg:h-1/3"
         }`}
       >
-        <div className="mx-auto flex h-2/12 w-full text-white justify-center">
-          <div className="flex flex-col p-4 m-2 w-10/12 space-y-3">
+        <div className="mx-auto flex h-2/12 w-full text-white justify-center sm:mb-4 lg:mb-0">
+          <div className="flex flex-col p-4 m-2 w-10/12 space-y-2">
             <div className="text-white flex flex-col justify-center">
-              <span className="font-bold text-left text-3xl">
+              <span className="font-bold text-left sm:text-[3vw] lg:text-xl sm:mb-1 lg:mb-0">
                 Real Time Chat
               </span>
-              <span className="font-bold text-left text-xl text-white">
+              <span className="font-bold text-left sm:text-[1.5vw] lg:text-xs text-white">
                 Unsaved Chat between users using WebSockets
               </span>
             </div>
             {data.code !== "" && (
-              <div className="flex flex-row justify-between bg-gray-700 rounded-lg p-3 font-bold text-xl">
+              <div className="flex flex-row justify-between bg-gray-700 rounded-md p-1 font-bold text-[0.5rem] lg:text-[0.8rem]">
                 <p>Room Code: {data.code}</p>
                 <p>Active Users: {data.users}</p>
               </div>
@@ -198,7 +198,7 @@ function App() {
           </div>
         </div>
 
-        <div className="mx-auto flex h-9/12 w-full text-white p-4 m-2 overflow-y-visible">
+        <div className="mx-auto flex h-9/12 w-full text-white py-1 p-3 m-1 overflow-y-visible mt-3 md:mt-5 lg:mt-4">
           {data.code !== "" ? (
             <div className="flex flex-col justify-start mx-auto border-2 border-white rounded-xl p-4 pb-0 m-2 w-10/12 items-start space-y-2 overflow-y-auto">
               {messages.messages.map((msg, idx) =>
@@ -218,9 +218,9 @@ function App() {
               <div ref={bottomRef} />
             </div>
           ) : (
-            <div className="flex justify-center items-center w-full h-full mt-5">
+            <div className="flex justify-center items-center w-full h-full sm:mt-0 lg:mt-4">
               <div
-                className="bg-gray-200 text-black hover:cursor-pointer w-10/12 flex justify-center items-center rounded-xl text-3xl font-bold p-6"
+                className="bg-gray-200 text-black hover:cursor-pointer w-10/12 flex justify-center items-center rounded-xl sm:text-[3.3vw] lg:text-xl 2xl:text-2xl font-bold sm:p-3 lg:p-3 2xl:p-6"
                 onClick={handleCreateRoom}
               >
                 Create New Room
@@ -229,17 +229,19 @@ function App() {
           )}
         </div>
 
-        <div className="w-full flex justify-center items-center flex-row text-white">
-          <div className="flex flex-row w-10/12 mb-10">
-            <div className="flex flex-row w-full">
+        <div className="w-full flex justify-center items-center flex-row text-white 2xl:mt-2">
+          <div className="flex lg:flex-row sm:flex-col w-11/12 lg:w-10/12 lg:mb-6 sm:mb-2 px-1">
+            <div className="flex lg:flex-row sm:flex-col w-full">
               <input
                 ref={inputRef}
                 placeholder={
                   data.code !== "" ? "Enter your message" : "Enter Room No."
                 }
-                className={`h-16 ${
-                  data.code == "" ? "w-1/2" : "w-full"
-                } border-2 rounded-lg m-2 p-4 text-xl font-bold text-gray-100 bg-gray-800`}
+                className={` ${
+                  data.code == ""
+                    ? "sm:h-8 h-16 sm:w-10/12 w-1/2"
+                    : "w-10/12 h-8 lg:w-full"
+                } border-2 rounded-lg lg:m-2 lg:p-4 lg:px-0.5 lg:my-0 sm:m-4 sm:my-1 sm:p-1 sm:text-xs lg:text-xs font-bold text-gray-100 bg-gray-800`}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     if (data.code !== "") {
@@ -253,8 +255,8 @@ function App() {
               {data.code == "" && (
                 <input
                   ref={nameRef}
-                  placeholder="Enter your name"
-                  className="h-16 w-1/2 border-2 rounded-lg m-2 p-4 text-xl font-bold text-gray-100 bg-gray-800"
+                  placeholder="Enter Your Name"
+                  className="sm:w-10/12 sm:h-8 lg:h-8 w-1/2 sm:m-4 sm:my-1 border-2 rounded-lg lg:m-2 lg:p-4 lg:px-0.5  sm:p-1 lg:my-0 sm:text-xs lg:text-xs font-bold text-gray-100 bg-gray-800"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       handleCreateRoom();
@@ -265,7 +267,7 @@ function App() {
             </div>
             <button
               onClick={data.code !== "" ? handleSend : handleCreateRoom}
-              className="cursor-pointer h-16 w-1/6 border-2 rounded-lg m-2 p-4 text-black font-bold bg-white text-2xl"
+              className="cursor-pointer sm:m-4 sm:h-8 lg:h-9 sm:w-10/12 lg:w-1/6 border-2 lg:my-0 rounded-lg lg:m-2 sm:p-1 lg:p-3 lg:py-0 text-black font-bold bg-white sm:text-sm lg:text-md"
             >
               {data.code !== "" ? "Send" : "Join"}
             </button>

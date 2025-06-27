@@ -311,9 +311,9 @@ function App() {
           </div>
         </div>
 
-        <div className="mx-auto flex h-10/12 sm:h-9/12 w-full text-white py-1 p-3 m-1 overflow-y-visible mt-2 md:mt-5 lg:mt-4">
+        <div className="mx-auto flex h-10/12 sm:h-9/12 w-full text-white py-1 p-3 m-1 overflow-y-hidden mt-2 md:mt-5 lg:mt-4">
           {data.code !== "" ? (
-            <div className="flex flex-col justify-start mx-auto border-2 border-white rounded-xl p-4 pb-0 m-2 w-10/12 items-start space-y-2 overflow-y-auto">
+            <div className="flex flex-col justify-start mx-auto border-2 border-white rounded-xl p-4 pb-0 m-2 w-10/12 items-start space-y-2 overflow-y-scroll">
               {messages.messages.map((msg, idx) =>
                 msg.type === "sent" ? (
                   <SendMessageBox key={`sent-${idx}`} msg={msg.msg} />

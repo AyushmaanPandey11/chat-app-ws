@@ -29,6 +29,12 @@ function App() {
   useEffect(() => {
     const ws = new WebSocket("wss://chat-app-ws-owra.onrender.com");
 
+    ws.onmessage = (message) => {
+      if (message.toString() === "ping") {
+        ws.send("pong");
+      }
+    };
+
     ws.onmessage = (event) => {
       let parsedData;
       try {

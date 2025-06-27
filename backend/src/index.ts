@@ -1,12 +1,25 @@
 import { WebSocketServer } from "ws";
-import { User } from "./types";
+import { createServer } from "http";
+import express from "express";
 import dotenv from "dotenv";
+import { User } from "./types";
+
 dotenv.config({
   path: "./.env",
 });
 
+// Initialize Express and HTTP server
+const app = express();
+const server = createServer(app);
 const port = Number(process.env.PORT || 8080);
-const wss = new WebSocketServer({ port });
+
+// Add health check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
+// Initialize WebSocket server
+const wss = new WebSocketServer({ server });
 
 console.log(`WebSocket server is running on port ${port}`);
 
@@ -120,4 +133,9 @@ wss.on("connection", (socket) => {
       );
     }
   });
+});
+
+// Start the server
+server.listen(port, () => {
+  console.log(`HTTP and WebSocket server running on port ${port}`);
 });

@@ -29,6 +29,12 @@ wss.on("connection", (socket) => {
   console.log("New user connected");
 
   socket.on("message", (message) => {
+    if (message.toString() === "ping") {
+      socket.send("pong");
+      console.log("Received ping, sent pong");
+      return;
+    }
+
     let parsedMessage;
     try {
       parsedMessage = JSON.parse(message.toString() as string);
@@ -95,6 +101,29 @@ wss.on("connection", (socket) => {
               JSON.stringify({
                 type: "chat",
                 payload: messagetoSend,
+              })
+            )
+          );
+      }
+    } else if (parsedMessage.type === "typing") {
+      const userRoom = sockets.find(
+        (s) => s.roomId === parsedMessage.payload.roomId
+      );
+      if (userRoom) {
+        sockets
+          .filter(
+            (s) =>
+              s.roomId === parsedMessage.payload.roomId &&
+              s.name !== parsedMessage.payload.sender
+          )
+          .forEach((s) =>
+            s.socket.send(
+              JSON.stringify({
+                type: "typing",
+                payload: {
+                  sender: parsedMessage.payload.sender,
+                  isTyping: parsedMessage.payload.isTyping,
+                },
               })
             )
           );

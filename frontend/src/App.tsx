@@ -12,8 +12,11 @@ function App() {
   const nameRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isTypingRef = useRef<boolean>(false);
   const currentUserRef = useRef<string>("");
   const [messages, setMessages] = useState<Messages>({ messages: [] });
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
   const [data, setData] = useState<UserState>({
     name: "",
@@ -23,19 +26,24 @@ function App() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    console.log(messages);
   }, [messages]);
 
   useEffect(() => {
     const ws = new WebSocket("wss://chat-app-ws-owra.onrender.com");
 
-    ws.onmessage = (message) => {
-      if (message.toString() === "ping") {
-        ws.send("pong");
-      }
-    };
+    // const ws = new WebSocket("ws://localhost:8080");
 
     ws.onmessage = (event) => {
+      if (event.data === "ping") {
+        ws.send("pong");
+        console.log("Received ping, sent pong");
+        return;
+      }
+      if (event.data === "pong") {
+        console.log("Received pong");
+        return;
+      }
+
       let parsedData;
       try {
         parsedData = JSON.parse(event.data);
@@ -91,10 +99,27 @@ function App() {
             },
           ],
         }));
+      } else if (parsedData.type === "typing") {
+        const { isTyping, sender } = parsedData.payload;
+        setTypingUsers((prev) => {
+          if (isTyping && !prev.includes(sender)) {
+            return [...prev, sender];
+          } else if (!isTyping && prev.includes(sender)) {
+            return prev.filter((user) => user !== sender);
+          }
+          return prev;
+        });
       } else if (parsedData.type === "error") {
         console.error("Server error:", parsedData.message);
       }
     };
+
+    const pingInterval = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send("ping");
+        console.log("Sent ping");
+      }
+    }, 40000);
 
     ws.onerror = (error) => {
       console.error("WebSocket Error:", error);
@@ -105,14 +130,67 @@ function App() {
         code: event.code,
         reason: event.reason,
       });
+      clearInterval(pingInterval);
     };
 
     wsRef.current = ws;
 
     return () => {
+      clearInterval(pingInterval);
       ws.close();
     };
   }, []);
+
+  const handleTyping = useCallback(() => {
+    if (!data.code || !data.name || !inputRef.current) return;
+
+    const isTyping = inputRef.current.value.trim().length > 0;
+
+    if (isTyping === isTypingRef.current) return;
+
+    // Send typing status immediately
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(
+        JSON.stringify({
+          type: "typing",
+          payload: {
+            roomId: data.code,
+            sender: data.name,
+            isTyping,
+          },
+        })
+      );
+      console.log(`Sent typing: ${isTyping}`);
+    }
+
+    // Update typing state
+    isTypingRef.current = isTyping;
+
+    // Clear any existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // If user is typing, set timeout to send isTyping: false
+    if (isTyping) {
+      typingTimeoutRef.current = setTimeout(() => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(
+            JSON.stringify({
+              type: "typing",
+              payload: {
+                roomId: data.code,
+                sender: data.name,
+                isTyping: false,
+              },
+            })
+          );
+          console.log("Sent typing: false (timeout)");
+        }
+        isTypingRef.current = false;
+      }, 2000);
+    }
+  }, [data.code, data.name]);
 
   const handleSend = useCallback(() => {
     const message = inputRef.current?.value?.trim();
@@ -142,6 +220,25 @@ function App() {
     wsRef.current?.send(JSON.stringify(messageBody));
 
     if (inputRef.current) inputRef.current.value = "";
+
+    // Clear typing state and send isTyping: false
+    if (wsRef.current?.readyState === WebSocket.OPEN && isTypingRef.current) {
+      wsRef.current.send(
+        JSON.stringify({
+          type: "typing",
+          payload: {
+            roomId: data.code,
+            sender: data.name,
+            isTyping: false,
+          },
+        })
+      );
+      console.log("Sent typing: false (message sent)");
+      isTypingRef.current = false;
+    }
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
   }, [data.name, data.code]);
 
   const handleCreateRoom = useCallback(() => {
@@ -230,7 +327,12 @@ function App() {
                   <NotificationBox msg={msg.msg} key={`notify-${idx}`} />
                 )
               )}
-
+              {typingUsers.length > 0 && (
+                <div className="text-gray-400 text-sm italic">
+                  {typingUsers.join(", ")}{" "}
+                  {typingUsers.length > 1 ? "are" : "is"} typing...
+                </div>
+              )}
               <div ref={bottomRef} />
             </div>
           ) : (
@@ -267,6 +369,7 @@ function App() {
                     }
                   }
                 }}
+                onChange={data.code !== "" ? handleTyping : undefined}
               />
               {data.code == "" && (
                 <input

@@ -17,6 +17,10 @@ function App() {
   const currentUserRef = useRef<string>("");
   const [messages, setMessages] = useState<Messages>({ messages: [] });
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [bufferedJoin, setBufferedJoin] = useState<{
+    roomId: string;
+    name: string;
+  } | null>(null);
 
   const [data, setData] = useState<UserState>({
     name: "",
@@ -31,7 +35,23 @@ function App() {
   useEffect(() => {
     const ws = new WebSocket("wss://chat-app-ws-owra.onrender.com");
 
-    // const ws = new WebSocket("ws://localhost:8080");
+    ws.onopen = () => {
+      console.log("WebSocket connected");
+      // Send buffered join request if it exists
+      if (bufferedJoin) {
+        ws.send(
+          JSON.stringify({
+            type: "join",
+            payload: {
+              roomId: bufferedJoin.roomId,
+              name: bufferedJoin.name,
+            },
+          })
+        );
+        console.log("Sent buffered join:", bufferedJoin);
+        setBufferedJoin(null);
+      }
+    };
 
     ws.onmessage = (event) => {
       if (event.data === "ping") {
@@ -139,7 +159,7 @@ function App() {
       clearInterval(pingInterval);
       ws.close();
     };
-  }, []);
+  }, [bufferedJoin]);
 
   const handleTyping = useCallback(() => {
     if (!data.code || !data.name || !inputRef.current) return;
@@ -148,7 +168,6 @@ function App() {
 
     if (isTyping === isTypingRef.current) return;
 
-    // Send typing status immediately
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(
         JSON.stringify({
@@ -163,15 +182,12 @@ function App() {
       console.log(`Sent typing: ${isTyping}`);
     }
 
-    // Update typing state
     isTypingRef.current = isTyping;
 
-    // Clear any existing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
-    // If user is typing, set timeout to send isTyping: false
     if (isTyping) {
       typingTimeoutRef.current = setTimeout(() => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -216,12 +232,13 @@ function App() {
         message,
       },
     };
-    console.log("Sending message:", messageBody);
-    wsRef.current?.send(JSON.stringify(messageBody));
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(messageBody));
+      console.log("Sent message:", messageBody);
+    }
 
     if (inputRef.current) inputRef.current.value = "";
 
-    // Clear typing state and send isTyping: false
     if (wsRef.current?.readyState === WebSocket.OPEN && isTypingRef.current) {
       wsRef.current.send(
         JSON.stringify({
@@ -248,6 +265,7 @@ function App() {
       console.warn("Cannot join room: missing code or name", { code, name });
       return;
     }
+
     currentUserRef.current = name;
     setData((prev) => ({
       ...prev,
@@ -256,19 +274,21 @@ function App() {
     }));
 
     const payload = {
-      type: "join",
-      payload: {
-        roomId: code,
-        name,
-      },
+      roomId: code,
+      name,
     };
 
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(payload));
+      wsRef.current.send(
+        JSON.stringify({
+          type: "join",
+          payload,
+        })
+      );
+      console.log("Sent join:", payload);
     } else {
-      wsRef.current!.onopen = () => {
-        wsRef.current?.send(JSON.stringify(payload));
-      };
+      setBufferedJoin(payload); // Buffer the join request
+      console.log("Buffered join:", payload);
     }
 
     if (inputRef.current) inputRef.current.value = "";
